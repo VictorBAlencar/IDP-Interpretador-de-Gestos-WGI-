@@ -4,61 +4,29 @@ import pyautogui
 import random
 import time
 import calculo_distancia as util
-from pynput.mouse import Button, Controller
+from pynput.mouse import Controller
+import cursor_movement
+import left_click
+import right_click
 
 pyautogui.PAUSE = 0
 pyautogui.FAILSAFE = False
-
 mouse = Controller()
-screen_width, screen_height = pyautogui.size()
 
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(
     static_image_mode=False,
     model_complexity=1,
-    min_detection_confidence=0.7,
-    min_tracking_confidence=0.7,
+    min_detection_confidence=0.85,
+    min_tracking_confidence=0.85,
     max_num_hands=1
 )
 
-prev_x, prev_y = 0, 0
-smoothening = 5
 last_click_time = 0
-click_cooldown = 0.5
-
-def find_finger_tip(processed):
-    if processed.multi_hand_landmarks:
-        hand_landmarks = processed.multi_hand_landmarks[0] 
-        index_finger_tip = hand_landmarks.landmark[mpHands.HandLandmark.INDEX_FINGER_TIP]
-        return index_finger_tip
-    return None
-
-def move_mouse(index_finger_tip):
-    global prev_x, prev_y
-    if index_finger_tip is not None:
-        
-        x = int(index_finger_tip.x * screen_width)
-        y = int(index_finger_tip.y * screen_height)
-
-        curr_x = prev_x + (x - prev_x) / smoothening
-        curr_y = prev_y + (y - prev_y) / smoothening
-
-        pyautogui.moveTo(curr_x, curr_y)
-        prev_x, prev_y = curr_x, curr_y
-
-def is_left_click(landmark_list, thumb_index_dist):
-    return (
-            util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) < 50 and
-            util.get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) > 90 and
-            thumb_index_dist > 50
-    )
-
-def is_right_click(landmark_list, thumb_index_dist):
-    return (
-            util.get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) < 50 and
-            util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 90  and
-            thumb_index_dist > 50
-    )
+click_cooldown = 0.5 
+is_dragging = False
+drag_start_time = 0
+last_left_click_detected_time = 0
 
 def is_double_click(landmark_list, thumb_index_dist):
     return (
@@ -75,38 +43,74 @@ def is_screenshot(landmark_list, thumb_index_dist):
     )
 
 def detect_gesture(frame, landmark_list, processed):
-    global last_click_time
+    global last_click_time, is_dragging, drag_start_time, last_left_click_detected_time
+
+    current_time = time.time()
 
     if len(landmark_list) >= 21:
-        index_finger_tip = find_finger_tip(processed)
+        hand_landmarks = processed.multi_hand_landmarks[0]
+        palm_center = cursor_movement.get_palm_center(hand_landmarks)
         thumb_index_dist = util.get_distance([landmark_list[4], landmark_list[5]])
-        current_time = time.time()
 
-        if util.get_distance([landmark_list[4], landmark_list[5]]) < 50 and util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 90:
-            move_mouse(index_finger_tip)
+        left_clicking = left_click.is_left_click(landmark_list, thumb_index_dist, is_dragging)
+        if left_clicking:
+            last_left_click_detected_time = current_time
+        right_clicking = right_click.is_right_click(landmark_list, thumb_index_dist)
+        double_clicking = is_double_click(landmark_list, thumb_index_dist)
+        screenshotting = is_screenshot(landmark_list, thumb_index_dist)
         
-        # FIXED: Added a cooldown so it doesn't machine-gun click
-        elif current_time - last_click_time > click_cooldown:
-            if is_left_click(landmark_list, thumb_index_dist):
-                mouse.press(Button.left)
-                mouse.release(Button.left)
+        any_click_intent = left_clicking or right_clicking or double_clicking or screenshotting
+
+        index_is_straight = util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 90
+        
+        is_actually_dragging = is_dragging and (current_time - drag_start_time > 0.25)
+        if (index_is_straight and not any_click_intent and not is_dragging) or (is_actually_dragging and left_clicking):
+            cursor_movement.move_mouse(palm_center)
+        
+        if left_clicking:
+            if not is_dragging:
+                left_click.hold_click(mouse)
+                is_dragging = True
+                drag_start_time = current_time
+                
+            if is_actually_dragging:
+                cv2.putText(frame, "Dragging", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            else:
                 cv2.putText(frame, "Left Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                last_click_time = current_time
-            elif is_right_click(landmark_list, thumb_index_dist):
-                mouse.press(Button.right)
-                mouse.release(Button.right)
-                cv2.putText(frame, "Right Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                last_click_time = current_time
-            elif is_double_click(landmark_list, thumb_index_dist):
-                pyautogui.doubleClick()
-                cv2.putText(frame, "Double Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
-                last_click_time = current_time
-            elif is_screenshot(landmark_list, thumb_index_dist):
-                im1 = pyautogui.screenshot()
-                label = random.randint(1, 1000)
-                im1.save(f'my_screenshot_{label}.png')
-                cv2.putText(frame, "Screenshot Taken", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
-                last_click_time = current_time
+        else:
+            if is_dragging:
+                # 2 segundos para liberar dragging
+                if current_time - last_left_click_detected_time > 0.2:
+                    left_click.release_click(mouse)
+                    is_dragging = False
+                    last_click_time = current_time
+                else:
+                    if is_actually_dragging:
+                        cv2.putText(frame, "Dragging", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                    else:
+                        cv2.putText(frame, "Left Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+            if not is_dragging and current_time - last_click_time > click_cooldown:
+                if right_clicking:
+                    right_click.perform_click(mouse)
+                    cv2.putText(frame, "Right Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                    last_click_time = current_time
+                elif double_clicking:
+                    pyautogui.doubleClick()
+                    cv2.putText(frame, "Double Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+                    last_click_time = current_time
+                elif screenshotting:
+                    im1 = pyautogui.screenshot()
+                    label = random.randint(1, 1000)
+                    im1.save(f'my_screenshot_{label}.png')
+                    cv2.putText(frame, "Screenshot Taken", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+                    last_click_time = current_time
+    else:
+        # Sair drag click
+        if is_dragging and current_time - last_left_click_detected_time > 0.2:
+            left_click.release_click(mouse)
+            is_dragging = False
+            last_click_time = current_time
 
 def main():
     draw = mp.solutions.drawing_utils
