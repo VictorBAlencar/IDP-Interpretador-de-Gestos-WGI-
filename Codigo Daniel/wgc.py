@@ -8,6 +8,8 @@ from pynput.mouse import Controller
 import cursor_movement
 import left_click
 import right_click
+import double_click
+import screenshot
 
 pyautogui.PAUSE = 0
 pyautogui.FAILSAFE = False
@@ -28,19 +30,6 @@ is_dragging = False
 drag_start_time = 0
 last_left_click_detected_time = 0
 
-def is_double_click(landmark_list, thumb_index_dist):
-    return (
-            util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) < 50 and
-            util.get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) < 50 and
-            thumb_index_dist > 50
-    )
-
-def is_screenshot(landmark_list, thumb_index_dist):
-    return (
-            util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) < 50 and
-            util.get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) < 50 and
-            thumb_index_dist < 50
-    )
 
 def detect_gesture(frame, landmark_list, processed):
     global last_click_time, is_dragging, drag_start_time, last_left_click_detected_time
@@ -56,8 +45,8 @@ def detect_gesture(frame, landmark_list, processed):
         if left_clicking:
             last_left_click_detected_time = current_time
         right_clicking = right_click.is_right_click(landmark_list, thumb_index_dist)
-        double_clicking = is_double_click(landmark_list, thumb_index_dist)
-        screenshotting = is_screenshot(landmark_list, thumb_index_dist)
+        double_clicking = double_click.is_double_click(landmark_list, thumb_index_dist)
+        screenshotting = screenshot.is_screenshot(landmark_list)
         
         any_click_intent = left_clicking or right_clicking or double_clicking or screenshotting
 
@@ -96,13 +85,11 @@ def detect_gesture(frame, landmark_list, processed):
                     cv2.putText(frame, "Right Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                     last_click_time = current_time
                 elif double_clicking:
-                    pyautogui.doubleClick()
+                    double_click.perform_click()
                     cv2.putText(frame, "Double Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
                     last_click_time = current_time
                 elif screenshotting:
-                    im1 = pyautogui.screenshot()
-                    label = random.randint(1, 1000)
-                    im1.save(f'my_screenshot_{label}.png')
+                    screenshot.take_screenshot()
                     cv2.putText(frame, "Screenshot Taken", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
                     last_click_time = current_time
     else:
