@@ -1,0 +1,11 @@
+{
+"manifest_version": 3,
+"name": "Web Gesture Interpreter",
+"version": "1.0",
+"description": "uma extensão inovadora projetada para transformar a maneira como interagimos com o navegador. Ao converter movimentos manuais capturados via webcam em comandos de navegação, o projeto elimina a barreira do contato físico com periféricos, oferecendo uma experiência de usuário fluida, intuitiva e futurista.",
+"action": {
+"default_popup": "popup.html",
+"default_icon": "icon.png"
+},
+"permissions": ["activeTab"]
+}
