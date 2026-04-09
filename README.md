@@ -20,3 +20,19 @@ Interatividade em Mídias Sociais: Permite o consumo de feeds verticais e mídia
 Expansão para Imersão: Serve como uma ponte de baixo custo para experiências de Realidade Aumentada (AR) diretamente no browser, sem a necessidade de hardware caro.
 
 Desde o controle de câmeras em conferências remotas até a navegação em jogos baseados em web, o potencial do WGI se estende a qualquer aplicação que se beneficie de uma interface espacial. Ele transforma o navegador de uma janela estática em um ambiente responsivo ao movimento humano.
+
+-----------------
+
+# GUIA DE USO
+
+Para utilizar o Web Gesture Interpreter, é necessário configurar a extensão no navegador e executar o servidor de suporte local para o processamento dos gestos.
+
+1. Download dos Arquivos
+
+Acesse a aba Releases no repositório do GitHub.
+
+Localize a versão mais recente e, na seção Assets, baixe o arquivo comprimido (ex: wgi-v1.0.zip).
+
+Extraia o conteúdo do arquivo em uma pasta de sua preferência no computador.
+
+-----------------
