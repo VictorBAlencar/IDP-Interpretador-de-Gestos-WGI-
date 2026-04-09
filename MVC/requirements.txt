@@ -1,5 +1,0 @@
-numpy>=1.23.0,<2.0.0
-mediapipe==0.10.11
-opencv-python<4.10
-pyautogui>=0.9.54
-pynput
