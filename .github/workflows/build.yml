@@ -45,9 +45,13 @@ jobs:
           Output/WGC_Backend_Installer.exe
           dist/wgc*
 
+    - name: Zip Extension for Chrome Web Store
+      if: matrix.os == 'ubuntu-latest'
+      run: cd extensao && zip -r ../WGC_Extension_Store.zip ./* && cd ..
+
     - name: Upload Frontend Extension
       if: matrix.os == 'ubuntu-latest' # Faz upload da extensão apenas 1 vez (não precisa repetir nos 3 SOs)
       uses: actions/upload-artifact@v4
       with:
-        name: WGC-Extensao
-        path: extensao/
+        name: WGC-Extensao-WebStore
+        path: WGC_Extension_Store.zip
