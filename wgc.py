@@ -137,6 +137,14 @@ def stop_tracking():
     is_tracking = False
 
 class WGCServer(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(200, "ok")
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type')
+        self.send_header('Access-Control-Allow-Private-Network', 'true')
+        self.end_headers()
+
     def do_POST(self):
         if self.path == '/start_tracking':
             start_tracking(headless=True)
@@ -152,6 +160,7 @@ class WGCServer(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Private-Network', 'true')
         self.end_headers()
         self.wfile.write(json.dumps({"message": msg}).encode('utf-8'))
 
@@ -161,6 +170,7 @@ class WGCServer(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Private-Network', 'true')
             self.end_headers()
             self.wfile.write(json.dumps(current_state).encode('utf-8'))
             

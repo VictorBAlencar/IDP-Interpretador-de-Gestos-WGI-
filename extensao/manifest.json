@@ -5,7 +5,8 @@
   "description": "Controle o cursor do mouse usando gestos da mão capturados pela webcam.",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": [
-    "http://127.0.0.1:5000/*"
+    "http://127.0.0.1:5000/*",
+    "<all_urls>"
   ],
   "content_scripts": [
     {
