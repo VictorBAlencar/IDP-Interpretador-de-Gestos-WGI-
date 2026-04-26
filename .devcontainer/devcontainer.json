@@ -1,11 +1,11 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/python
+// README at: https://github.com/devcontainers/templates/tree/main/src/universal
 {
-	"name": "Python 3",
+	"name": "Default Linux Universal",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/python:3-3.11-bookworm",
+	"image": "mcr.microsoft.com/devcontainers/universal:5-linux",
 	"features": {
-		"ghcr.io/devcontainer-config/features/dot-config:4": {}
+		"ghcr.io/wxw-matt/devcontainer-features/command_runner:0": {}
 	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
@@ -15,7 +15,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "pip3 install --user -r requirements.txt",
+	// "postCreateCommand": "uname -a",
 
 	// Configure tool-specific properties.
 	// "customizations": {},
