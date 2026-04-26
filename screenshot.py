@@ -1,7 +1,8 @@
 import calculo_distancia as util
 
 def is_screenshot(landmark_list):
-#Sinal de paz com o dedo indicador e do meio para cima. Anelar e mindinho para baixo
+    # A Peace Sign (Index and Middle straight, Ring and Pinky bent) 
+    # prevents clashing with double clicks and dragging gestures.
     return (
             util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 90 and
             util.get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) > 90 and

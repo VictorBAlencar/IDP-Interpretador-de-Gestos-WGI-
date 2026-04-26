@@ -15,5 +15,5 @@ def get_distance(landmark_list):
     return np.interp(L, [0, 1], [0, 1000])
 
 def get_raw_dist(p1, p2):
-    #distancia euclidiana entre o dedao e a palma da mao
+    """Returns Euclidean distance between two points in normalized 0-1 space."""
     return np.hypot(p2[0] - p1[0], p2[1] - p1[1])

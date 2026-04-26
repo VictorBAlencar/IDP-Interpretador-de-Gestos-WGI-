@@ -1,51 +1,49 @@
-// Cria um elemento que simula o cursor apenas DENTRO do site!
-let virtualCursor = document.createElement("div");
-virtualCursor.id = "wgc-virtual-cursor";
-virtualCursor.style.position = "fixed";
-virtualCursor.style.width = "20px";
-virtualCursor.style.height = "20px";
-virtualCursor.style.backgroundColor = "rgba(0, 150, 255, 0.7)";
-virtualCursor.style.border = "2px solid white";
-virtualCursor.style.borderRadius = "50%";
-virtualCursor.style.pointerEvents = "none"; // IMPORTANTE: não bloqueia os seus cliques
-virtualCursor.style.zIndex = "2147483647"; // Fica acima de tudo
-virtualCursor.style.transition = "background-color 0.1s, transform 0.05s linear";
-virtualCursor.style.display = "none";
-document.body.appendChild(virtualCursor);
+const feedbackToast = document.createElement("div");
+feedbackToast.style.position = "fixed";
+feedbackToast.style.bottom = "20px";
+feedbackToast.style.right = "20px";
+feedbackToast.style.padding = "10px 20px";
+feedbackToast.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+feedbackToast.style.color = "#ffffff";
+feedbackToast.style.borderRadius = "8px";
+feedbackToast.style.fontFamily = "sans-serif";
+feedbackToast.style.fontSize = "14px";
+feedbackToast.style.zIndex = "999999";
+feedbackToast.style.opacity = "0";
+feedbackToast.style.transform = "translateY(20px)";
+feedbackToast.style.transition = "opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+feedbackToast.style.pointerEvents = "none";
+document.body.appendChild(feedbackToast);
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (msg.type === "WGC_STOP") {
-        virtualCursor.style.display = "none";
-        return;
-    }
-    
-    if (msg.type === "WGC_STATE") {
-        let state = msg.data;
-        virtualCursor.style.display = "block";
-        
-        // Converte valores (0.0 até 1.0) nas dimensões reais da tela da guia do site
-        let x = state.x * window.innerWidth;
-        let y = state.y * window.innerHeight;
-        
-        virtualCursor.style.left = `${x}px`;
-        virtualCursor.style.top = `${y}px`;
-        virtualCursor.style.transform = "translate(-50%, -50%)"; // Centraliza a bolinha
-        
-        if (state.action === "left_click" || state.action === "double_click") {
-            virtualCursor.style.backgroundColor = "rgba(0, 255, 0, 0.9)"; // Pisca verde
-            simulateClick(x, y);
-            setTimeout(() => virtualCursor.style.backgroundColor = "rgba(0, 150, 255, 0.7)", 150);
+let feedbackTimeout;
+
+const friendlyNames = {
+    "left_click": "Left Click 🖱️",
+    "right_click": "Right Click 🖱️",
+    "double_click": "Double Click 🖱️",
+    "scroll": "Scrolling ↕️",
+    "drag": "Dragging ✋",
+    "release_drag": "Drop 🤚"
+};
+
+const ignoredActions = ["move", "holding_click", "left_click_intent"];
+
+setInterval(() => {
+    chrome.runtime.sendMessage({ action: "get_state" }, (response) => {
+        if (response && !ignoredActions.includes(response.action)) {
+            console.log("Ação detectada pelo WGI:", response.action);
+            
+            const actionText = friendlyNames[response.action] || response.action;
+            feedbackToast.innerText = `Gesture: ${actionText}`;
+            feedbackToast.style.opacity = "1";
+            feedbackToast.style.transform = "translateY(0)";
+            
+            // Hide it again after 1 second
+            clearTimeout(feedbackTimeout);
+            feedbackTimeout = setTimeout(() => {
+                feedbackToast.style.opacity = "0";
+                feedbackToast.style.transform = "translateY(20px)";
+            }, 1000);
         }
-    }
-});
-
-// Lógica do clique DOM real independente do Windows OS
-function simulateClick(x, y) {
-    let el = document.elementFromPoint(x, y);
-    if (el) {
-        let clickEvent = new MouseEvent('click', {
-            view: window, bubbles: true, cancelable: true, clientX: x, clientY: y
-        });
-        el.dispatchEvent(clickEvent);
-    }
-}
+    });
+}, 50);
