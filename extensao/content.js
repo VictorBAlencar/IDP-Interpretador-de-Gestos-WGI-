@@ -28,22 +28,32 @@ const friendlyNames = {
 
 const ignoredActions = ["move", "holding_click", "left_click_intent"];
 
-setInterval(() => {
-    chrome.runtime.sendMessage({ action: "get_state" }, (response) => {
-        if (response && !ignoredActions.includes(response.action)) {
-            console.log("Ação detectada pelo WGI:", response.action);
-            
-            const actionText = friendlyNames[response.action] || response.action;
-            feedbackToast.innerText = `Gesture: ${actionText}`;
-            feedbackToast.style.opacity = "1";
-            feedbackToast.style.transform = "translateY(0)";
-            
-            // Hide it again after 1 second
-            clearTimeout(feedbackTimeout);
-            feedbackTimeout = setTimeout(() => {
-                feedbackToast.style.opacity = "0";
-                feedbackToast.style.transform = "translateY(20px)";
-            }, 1000);
+const intervalId = setInterval(() => {
+    try {
+        chrome.runtime.sendMessage({ action: "get_state" }, (response) => {
+            if (chrome.runtime.lastError) {
+                return;
+            }
+            if (response && !ignoredActions.includes(response.action)) {
+                console.log("Ação detectada pelo WGI:", response.action);
+                
+                const actionText = friendlyNames[response.action] || response.action;
+                feedbackToast.innerText = `Gesture: ${actionText}`;
+                feedbackToast.style.opacity = "1";
+                feedbackToast.style.transform = "translateY(0)";
+                
+                // Hide it again after 1 second
+                clearTimeout(feedbackTimeout);
+                feedbackTimeout = setTimeout(() => {
+                    feedbackToast.style.opacity = "0";
+                    feedbackToast.style.transform = "translateY(20px)";
+                }, 1000);
+            }
+        });
+    } catch (error) {
+        if (error.message.includes("Extension context invalidated")) {
+            clearInterval(intervalId);
+            feedbackToast.remove();
         }
-    });
+    }
 }, 50);
