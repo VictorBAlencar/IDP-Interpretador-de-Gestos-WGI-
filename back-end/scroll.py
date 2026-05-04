@@ -5,7 +5,6 @@ import collections
 import statistics
 
 prev_hand_y = None
-# Increased history length for a smoother scroll behavior
 HISTORY_LENGTH = 5
 idx_history = collections.deque(maxlen=HISTORY_LENGTH)
 mid_history = collections.deque(maxlen=HISTORY_LENGTH)
@@ -22,7 +21,6 @@ def detect_scroll(landmark_list):
     ring_angle_raw = util.get_angle(landmark_list[13], landmark_list[14], landmark_list[16])
     pinky_angle_raw = util.get_angle(landmark_list[17], landmark_list[18], landmark_list[20])
     
-    # Record the wrist's y position for scroll tracking
     current_y_raw = landmark_list[0][1]
 
     idx_history.append(idx_angle_raw)
@@ -47,7 +45,6 @@ def detect_scroll(landmark_list):
     
     stability_max = cfg.get("stability_std_max", 35)
     
-    # All involved fingers must be relatively stable to register as the scroll intent
     is_stable = (idx_std < stability_max and mid_std < stability_max and
                  ring_std < stability_max and pinky_std < stability_max)
 
