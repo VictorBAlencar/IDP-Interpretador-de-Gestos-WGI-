@@ -12,6 +12,8 @@ document.getElementById('btn-stop').addEventListener('click', () => {
 
 // Ouve as respostas que vêm do Python
 chrome.runtime.onMessage.addListener((msg) => {
-    document.getElementById('status').innerText = msg.message;
-    document.getElementById('loading-container').style.display = "none";
+    if (msg && msg.message) {
+        document.getElementById('status').innerText = msg.message;
+        document.getElementById('loading-container').style.display = "none";
+    }
 });

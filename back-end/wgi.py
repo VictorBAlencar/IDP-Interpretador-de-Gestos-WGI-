@@ -5,14 +5,14 @@ import threading
 import traceback
 import pyautogui
 import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import calculo_distancia as util
-import cursor_movement
-import left_click
-import right_click
-import double_click
-import scroll
+import cursor_movement as cursor_movement
+import left_click as left_click
+import right_click as right_click
+import double_click as double_click
+import scroll as scroll
 
 
 mpHands = mp.solutions.hands
@@ -185,6 +185,6 @@ def start_tracking(headless):
 def stop_tracking(): global is_tracking; is_tracking = False
 
 if __name__ == '__main__':
-    server = HTTPServer(('127.0.0.1', 8765), WGIServer)
+    server = ThreadingHTTPServer(('127.0.0.1', 8765), WGIServer)
     print("WGI Server Running on 8765...")
     server.serve_forever()
