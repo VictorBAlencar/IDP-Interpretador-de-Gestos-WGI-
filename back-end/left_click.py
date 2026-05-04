@@ -1,8 +1,8 @@
 import calculo_distancia as util
 import collections
 import statistics
-import calibration_manager
-import cursor_movement
+import calibration_manager as calibration_manager
+import cursor_movement as cursor_movement
 
 HISTORY_LENGTH = 3
 idx_history = collections.deque(maxlen=HISTORY_LENGTH)
