@@ -29,8 +29,7 @@ current_state = {"x": 0.5, "y": 0.5, "action": "move"}
 camera_ready_event = threading.Event()
 
 def detect_gesture(frame, landmark_list, processed):
-    import cv2  # Lazy load (cached in sys.modules, zero performance hit on FPS)
-
+    import cv2  
     global last_click_time, is_dragging, last_left_click_detected_time
     global left_click_start_time, mouse_down_triggered
     global current_state
