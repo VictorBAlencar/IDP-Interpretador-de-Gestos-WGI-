@@ -1,8 +1,7 @@
-import cv2
-import mediapipe as mp
 import time
 import threading
 import traceback
+import platform
 import pyautogui
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,8 +13,6 @@ import right_click as right_click
 import double_click as double_click
 import scroll as scroll
 
-
-mpHands = mp.solutions.hands
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
 screen_w, screen_h = pyautogui.size()
@@ -32,6 +29,8 @@ current_state = {"x": 0.5, "y": 0.5, "action": "move"}
 camera_ready_event = threading.Event()
 
 def detect_gesture(frame, landmark_list, processed):
+    import cv2  # Lazy load (cached in sys.modules, zero performance hit on FPS)
+
     global last_click_time, is_dragging, last_left_click_detected_time
     global left_click_start_time, mouse_down_triggered
     global current_state
@@ -115,8 +114,15 @@ def detect_gesture(frame, landmark_list, processed):
 
 def _tracking_loop(headless):
     global is_tracking
+    import cv2
+    import mediapipe as mp
+    
+    mpHands = mp.solutions.hands
     draw = mp.solutions.drawing_utils
-    cap = cv2.VideoCapture(0)
+    if platform.system() == 'Linux':
+        cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+    else:
+        cap = cv2.VideoCapture(0)
 
     hands = mpHands.Hands(
         static_image_mode=False,

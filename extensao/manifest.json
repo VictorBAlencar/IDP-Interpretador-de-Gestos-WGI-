@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "WGC - Web Gesture Controller",
+  "name": "WGI - Web Gesture Interpreter",
   "version": "1.0",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["http://127.0.0.1:8765/*"],
