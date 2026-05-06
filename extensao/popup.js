@@ -17,3 +17,16 @@ chrome.runtime.onMessage.addListener((msg) => {
         document.getElementById('loading-container').style.display = "none";
     }
 });
+
+// Verifica o estado do servidor ao abrir o popup e atualiza a mensagem
+document.addEventListener('DOMContentLoaded', () => {
+    chrome.runtime.sendMessage({ action: "get_state" }, (response) => {
+        if (chrome.runtime.lastError) return;
+        
+        if (response && response.is_tracking) {
+            document.getElementById('status').innerText = "Câmera ativa e rastreando!";
+        } else if (response && response.error) {
+            document.getElementById('status').innerText = "Erro: O servidor WGI (Python) não está rodando.";
+        }
+    });
+});

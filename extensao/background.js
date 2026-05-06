@@ -1,8 +1,26 @@
 // background.js - O "Cérebro" da Extensão WGI
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    const BASE_URL = "http://127.0.0.1:8765";
+let CURRENT_PORT = 8765;
+let BASE_URL = `http://127.0.0.1:${CURRENT_PORT}`;
 
+async function findActivePort() {
+    for (let port = 8765; port <= 8800; port++) {
+        try {
+            const response = await fetch(`http://127.0.0.1:${port}/`);
+            if (response.ok) {
+                CURRENT_PORT = port;
+                BASE_URL = `http://127.0.0.1:${CURRENT_PORT}`;
+                console.log(`Servidor WGI encontrado na porta ${CURRENT_PORT}`);
+                return;
+            }
+        } catch (e) {}
+    }
+}
+
+// Inicia a busca pela porta correta assim que a extensão for carregada
+findActivePort();
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     //Iniciar ou Parar o Rastreamento com mediapipe
     if (request.action === "start_tracking" || request.action === "stop_tracking") {
         fetch(`${BASE_URL}/${request.action}`, { 

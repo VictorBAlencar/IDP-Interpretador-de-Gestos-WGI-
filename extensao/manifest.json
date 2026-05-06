@@ -3,9 +3,19 @@
   "name": "WGI - Web Gesture Interpreter",
   "version": "1.0",
   "permissions": ["activeTab", "scripting"],
-  "host_permissions": ["http://127.0.0.1:8765/*"],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "wgi@idp.extension",
+      "strict_min_version": "109.0"
+    }
   },
   "content_scripts": [
     {
