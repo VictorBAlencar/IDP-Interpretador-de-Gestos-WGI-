@@ -119,13 +119,31 @@ def _tracking_loop(headless):
     
     mpHands = mp.solutions.hands
     draw = mp.solutions.drawing_utils
-    if platform.system() == 'Linux':
+    
+    system_name = platform.system()
+    if system_name == 'Linux':
         cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
         if not cap.isOpened():
             print("Aviso: Falha ao usar V4L2. Tentando backend padrão do OpenCV...")
             cap = cv2.VideoCapture(0)
+    elif system_name == 'Darwin':
+        cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
+        if not cap.isOpened():
+            print("Aviso: Falha ao usar AVFoundation. Tentando backend padrão do OpenCV...")
+            cap = cv2.VideoCapture(0)
+    elif system_name == 'Windows':
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        if not cap.isOpened():
+            print("Aviso: Falha ao usar DirectShow. Tentando backend padrão do OpenCV...")
+            cap = cv2.VideoCapture(0)
     else:
         cap = cv2.VideoCapture(0)
+        
+    if not cap.isOpened():
+        print("Erro crítico: Câmera não encontrada ou permissão de acesso negada.")
+        is_tracking = False
+        camera_ready_event.set()
+        return
 
     hands = mpHands.Hands(
         static_image_mode=False,
