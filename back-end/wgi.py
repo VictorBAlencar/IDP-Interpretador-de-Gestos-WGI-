@@ -1,10 +1,10 @@
-import cv2
-import mediapipe as mp
 import time
 import threading
 import traceback
+import platform
 import pyautogui
 import json
+import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import calculo_distancia as util
@@ -14,8 +14,6 @@ import right_click as right_click
 import double_click as double_click
 import scroll as scroll
 
-
-mpHands = mp.solutions.hands
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
 screen_w, screen_h = pyautogui.size()
@@ -32,6 +30,7 @@ current_state = {"x": 0.5, "y": 0.5, "action": "move"}
 camera_ready_event = threading.Event()
 
 def detect_gesture(frame, landmark_list, processed):
+    import cv2  
     global last_click_time, is_dragging, last_left_click_detected_time
     global left_click_start_time, mouse_down_triggered
     global current_state
@@ -115,8 +114,18 @@ def detect_gesture(frame, landmark_list, processed):
 
 def _tracking_loop(headless):
     global is_tracking
+    import cv2
+    import mediapipe as mp
+    
+    mpHands = mp.solutions.hands
     draw = mp.solutions.drawing_utils
-    cap = cv2.VideoCapture(0)
+    if platform.system() == 'Linux':
+        cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+        if not cap.isOpened():
+            print("Aviso: Falha ao usar V4L2. Tentando backend padrão do OpenCV...")
+            cap = cv2.VideoCapture(0)
+    else:
+        cap = cv2.VideoCapture(0)
 
     hands = mpHands.Hands(
         static_image_mode=False,
@@ -166,7 +175,9 @@ class WGIServer(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/state':
             self.send_response(200); self.send_header('Content-Type', 'application/json'); self.send_header('Access-Control-Allow-Origin', '*'); self.end_headers()
-            self.wfile.write(json.dumps(current_state).encode())
+            state_data = current_state.copy()
+            state_data["is_tracking"] = is_tracking
+            self.wfile.write(json.dumps(state_data).encode())
             if current_state["action"] not in ["move", "drag", "holding_click"]: current_state["action"] = "move"
         elif self.path == '/':
             self.send_response(200); self.send_header('Content-Type', 'text/plain'); self.send_header('Access-Control-Allow-Origin', '*'); self.end_headers()
@@ -184,7 +195,18 @@ def start_tracking(headless):
 
 def stop_tracking(): global is_tracking; is_tracking = False
 
+def find_free_port(start_port=8765, max_port=8800):
+    for port in range(start_port, max_port):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(('127.0.0.1', port))
+                return port
+            except OSError:
+                continue
+    raise RuntimeError(f"Nenhuma porta livre encontrada entre {start_port} e {max_port}.")
+
 if __name__ == '__main__':
-    server = ThreadingHTTPServer(('127.0.0.1', 8765), WGIServer)
-    print("WGI Server Running on 8765...")
+    port = find_free_port()
+    server = ThreadingHTTPServer(('127.0.0.1', port), WGIServer)
+    print(f"WGI Server Running on {port}...")
     server.serve_forever()
