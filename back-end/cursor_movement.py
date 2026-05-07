@@ -20,7 +20,7 @@ def is_frozen(landmark_list):
     if len(landmark_list) < 21: return False
     scale = util.get_hand_scale(landmark_list)
     dist = util.get_raw_dist(landmark_list[4], landmark_list[9]) / scale
-    return dist < 0.35  # Threshold for 'robotic' precision, normalized by hand scale
+    return dist < 0.35
 
 def get_normalized_position(palm_center, landmark_list):
     global prev_x, prev_y
