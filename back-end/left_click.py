@@ -26,7 +26,6 @@ def is_left_click(landmark_list, thumb_index_dist, is_dragging=False):
     
     cfg = calibration_manager.config.get("left_click", {})
     
-    # Loosening standard deviation to 35 makes it snap quicker without false positives
     is_stable = idx_std < cfg.get("stability_std_max", 35) and mid_std < cfg.get("stability_std_max", 35)
     is_frozen = cursor_movement.is_frozen(landmark_list)
     
