@@ -13,7 +13,6 @@ mid_history = collections.deque(maxlen=HISTORY_LENGTH)
 def is_double_click(landmark_list, thumb_index_dist):
     global is_double_holding
     
-    # 1. Calculate current angles
     idx_angle_raw = util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8])
     mid_angle_raw = util.get_angle(landmark_list[9], landmark_list[10], landmark_list[12])
     
@@ -34,7 +33,6 @@ def is_double_click(landmark_list, thumb_index_dist):
     is_stable = idx_std < cfg.get("stability_std_max", 35) and mid_std < cfg.get("stability_std_max", 35)
     is_frozen = cursor_movement.is_frozen(landmark_list)
     
-    # 2. Define Thresholds
     TRIGGER_ANGLE = cfg.get("trigger_angle_max", 50)
     RELEASE_ANGLE = cfg.get("release_angle_min", 90)  
     THUMB_DIST = cfg.get("thumb_index_dist_min", 50)
