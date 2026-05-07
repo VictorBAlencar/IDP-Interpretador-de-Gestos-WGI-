@@ -2,3 +2,5 @@
 *.rar filter=lfs diff=lfs merge=lfs -text
 wgi-servidor/wgi-servidor-windows/_internal/**/*.dll filter=lfs diff=lfs merge=lfs -text
 wgi-servidor/wgi-servidor-windows/_internal/**/*.pyd filter=lfs diff=lfs merge=lfs -text
+output/wgi filter=lfs diff=lfs merge=lfs -text
+output/wgi/** filter=lfs diff=lfs merge=lfs -text
