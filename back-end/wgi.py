@@ -1,5 +1,6 @@
 import time
 import threading
+import math
 import traceback
 import platform
 import pyautogui
@@ -13,27 +14,85 @@ import left_click as left_click
 import right_click as right_click
 import double_click as double_click
 import scroll as scroll
+import calibration_manager as calibration_manager
 
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
 screen_w, screen_h = pyautogui.size()
 
 last_click_time = 0
-click_cooldown = 0.4 
+click_cooldown = 0.7
+click_confirmation_frames = 3
+drag_hold_threshold = 0.8
 is_dragging = False
 last_left_click_detected_time = 0
 is_tracking = False
 left_click_start_time = 0
 mouse_down_triggered = False
+wizard_active = False
+left_click_candidate_frames = 0
+right_click_candidate_frames = 0
+double_click_candidate_frames = 0
+right_click_armed = True
+double_click_armed = True
 
-current_state = {"x": 0.5, "y": 0.5, "action": "move"}
+calibration_gesture = None
+calibration_idx_history = []
+calibration_mid_history = []
+calibration_thumb_history = []
+
+latest_frame = None
+
+current_state = {
+    "x": 0.5,
+    "y": 0.5,
+    "action": "move",
+    "calibration": {"status": "idle", "gesture": None}
+}
 camera_ready_event = threading.Event()
+
+def should_suppress_mouse_actions():
+    return calibration_gesture is not None
+
+def cancel_calibration():
+    global calibration_gesture, calibration_idx_history, calibration_mid_history, calibration_thumb_history
+
+    calibration_gesture = None
+    calibration_idx_history = []
+    calibration_mid_history = []
+    calibration_thumb_history = []
+    current_state["calibration"] = {"status": "idle", "gesture": None}
+
+def reset_interaction_state():
+    global is_dragging, last_left_click_detected_time, left_click_start_time, mouse_down_triggered
+    global left_click_candidate_frames, right_click_candidate_frames, double_click_candidate_frames
+    global right_click_armed, double_click_armed
+
+    if is_dragging and mouse_down_triggered:
+        pyautogui.mouseUp()
+
+    is_dragging = False
+    mouse_down_triggered = False
+    last_left_click_detected_time = 0
+    left_click_start_time = 0
+    left_click_candidate_frames = 0
+    right_click_candidate_frames = 0
+    double_click_candidate_frames = 0
+    right_click_armed = True
+    double_click_armed = True
+    left_click.reset_state()
+    right_click.reset_state()
+    double_click.reset_state()
 
 def detect_gesture(frame, landmark_list, processed):
     import cv2  
     global last_click_time, is_dragging, last_left_click_detected_time
     global left_click_start_time, mouse_down_triggered
+    global calibration_gesture, calibration_idx_history, calibration_mid_history, calibration_thumb_history
     global current_state
+    global wizard_active
+    global left_click_candidate_frames, right_click_candidate_frames, double_click_candidate_frames
+    global right_click_armed, double_click_armed
 
     current_time = time.time()
     action = "move"
@@ -42,23 +101,77 @@ def detect_gesture(frame, landmark_list, processed):
         hand_landmarks = processed.multi_hand_landmarks[0]
         palm_center = cursor_movement.get_palm_center(hand_landmarks)
         
+        if calibration_gesture:
+            idx_angle = util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8])
+            mid_angle = util.get_angle(landmark_list[9], landmark_list[10], landmark_list[12])
+            thumb_dist = util.get_distance(landmark_list, 4, 5)
+            
+            calibration_idx_history.append(idx_angle)
+            calibration_mid_history.append(mid_angle)
+            calibration_thumb_history.append(thumb_dist)
+            
+            # Record for ~1.5 seconds (45 frames) to get a stable average
+            if len(calibration_idx_history) >= 45:
+                completed_gesture = calibration_gesture
+                calibrated = calibration_manager.auto_calibrate(completed_gesture, calibration_idx_history, calibration_mid_history, calibration_thumb_history)
+                calibration_gesture = None
+                current_state["action"] = "calibrated" if calibrated else "calibration_failed"
+                current_state["calibration"] = {
+                    "status": "saved" if calibrated else "failed",
+                    "gesture": completed_gesture
+                }
+            else:
+                current_state["action"] = "calibrating"
+                current_state["calibration"] = {"status": "recording", "gesture": calibration_gesture}
+                cv2.putText(frame, f"Calibrating...", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+            return
      
         x, y = cursor_movement.get_normalized_position(palm_center, landmark_list)
         
         if x is not None and y is not None:
             current_state["x"], current_state["y"] = x, y
-            pyautogui.moveTo(int(x * screen_w), int(y * screen_h))
+            if not should_suppress_mouse_actions():
+                pyautogui.moveTo(int(x * screen_w), int(y * screen_h))
 
         thumb_index_dist = util.get_distance(landmark_list, 4, 5)
         
         is_scrolling, scroll_amount = scroll.detect_scroll(landmark_list)
-        is_db = double_click.is_double_click(landmark_list, thumb_index_dist)
-        is_rc = right_click.is_right_click(landmark_list, thumb_index_dist)
-        is_lc = left_click.is_left_click(landmark_list, thumb_index_dist, is_dragging)
+        raw_is_db = double_click.is_double_click(landmark_list, thumb_index_dist)
+        raw_is_rc = right_click.is_right_click(landmark_list, thumb_index_dist)
+        raw_is_lc = left_click.is_left_click(landmark_list, thumb_index_dist, is_dragging)
+
+        if is_scrolling:
+            raw_is_db = False
+            raw_is_rc = False
+            raw_is_lc = False
+
+        if is_dragging:
+            is_lc = raw_is_lc
+        else:
+            if raw_is_lc:
+                left_click_candidate_frames += 1
+            else:
+                left_click_candidate_frames = 0
+            is_lc = left_click_candidate_frames >= click_confirmation_frames
+
+        if raw_is_rc:
+            right_click_candidate_frames += 1
+        else:
+            right_click_candidate_frames = 0
+            right_click_armed = True
+
+        if raw_is_db:
+            double_click_candidate_frames += 1
+        else:
+            double_click_candidate_frames = 0
+            double_click_armed = True
+
+        is_rc = right_click_candidate_frames >= click_confirmation_frames
+        is_db = double_click_candidate_frames >= click_confirmation_frames
 
         if is_scrolling:
             action = "scroll"
-            if scroll_amount != 0:
+            if scroll_amount != 0 and not should_suppress_mouse_actions():
                 pyautogui.scroll(scroll_amount)
         elif is_db:
             action = "double_click"
@@ -68,12 +181,14 @@ def detect_gesture(frame, landmark_list, processed):
             last_left_click_detected_time = current_time
             if not is_dragging:
                 is_dragging = True
+                left_click_candidate_frames = 0
                 left_click_start_time = current_time
                 mouse_down_triggered = False
                 action = "left_click_intent"
             else:
-                if current_time - left_click_start_time > 0.3 and not mouse_down_triggered:
-                    pyautogui.mouseDown()
+                if current_time - left_click_start_time > drag_hold_threshold and not mouse_down_triggered:
+                    if not should_suppress_mouse_actions():
+                        pyautogui.mouseDown()
                     mouse_down_triggered = True
                 action = "drag" if mouse_down_triggered else "holding_click"
         else:
@@ -82,21 +197,28 @@ def detect_gesture(frame, landmark_list, processed):
                     is_dragging = False
                     if mouse_down_triggered:
                         action = "release_drag"
-                        pyautogui.mouseUp()
+                        if not should_suppress_mouse_actions():
+                            pyautogui.mouseUp()
                         mouse_down_triggered = False
                     else:
                         action = "left_click"
-                        pyautogui.click()
+                        if not should_suppress_mouse_actions():
+                            pyautogui.click()
                     last_click_time = current_time
+                    left_click_candidate_frames = 0
                 else:
                     action = "drag" if mouse_down_triggered else "holding_click"
 
         if not is_dragging and current_time - last_click_time > click_cooldown:
-            if action == "right_click":
-                pyautogui.click(button='right')
+            if action == "right_click" and right_click_armed:
+                if not should_suppress_mouse_actions():
+                    pyautogui.click(button='right')
+                right_click_armed = False
                 last_click_time = current_time
-            elif action == "double_click":
-                pyautogui.doubleClick()
+            elif action == "double_click" and double_click_armed:
+                if not should_suppress_mouse_actions():
+                    pyautogui.doubleClick()
+                double_click_armed = False
                 last_click_time = current_time
 
         current_state["action"] = action
@@ -106,41 +228,37 @@ def detect_gesture(frame, landmark_list, processed):
             cv2.circle(frame, (30, 30), 10, (0, 0, 255), -1)
             
     else:
+        left_click_candidate_frames = 0
+        right_click_candidate_frames = 0
+        double_click_candidate_frames = 0
+        right_click_armed = True
+        double_click_armed = True
+        left_click.reset_state()
+        right_click.reset_state()
+        double_click.reset_state()
         if is_dragging:
             is_dragging = False
             if mouse_down_triggered:
-                pyautogui.mouseUp()
+                if not should_suppress_mouse_actions():
+                    pyautogui.mouseUp()
                 mouse_down_triggered = False
 
 def _tracking_loop(headless):
     global is_tracking
     import cv2
     import mediapipe as mp
-    
     mpHands = mp.solutions.hands
     draw = mp.solutions.drawing_utils
-    
-    system_name = platform.system()
-    if system_name == 'Linux':
+    if platform.system() == 'Linux':
         cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
         if not cap.isOpened():
             print("Aviso: Falha ao usar V4L2. Tentando backend padrão do OpenCV...")
             cap = cv2.VideoCapture(0)
-    elif system_name == 'Darwin':
-        cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
-        if not cap.isOpened():
-            print("Aviso: Falha ao usar AVFoundation. Tentando backend padrão do OpenCV...")
-            cap = cv2.VideoCapture(0)
-    elif system_name == 'Windows':
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-        if not cap.isOpened():
-            print("Aviso: Falha ao usar DirectShow. Tentando backend padrão do OpenCV...")
-            cap = cv2.VideoCapture(0)
     else:
         cap = cv2.VideoCapture(0)
-        
+
     if not cap.isOpened():
-        print("Erro crítico: Câmera não encontrada ou permissão de acesso negada.")
+        print("Erro: Nao foi possivel abrir a camera.")
         is_tracking = False
         camera_ready_event.set()
         return
@@ -160,7 +278,10 @@ def _tracking_loop(headless):
             ret, frame = cap.read()
             if not ret: break
             frame = cv2.flip(frame, 1)
-            processed = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            processed = hands.process(rgb_frame)
 
             landmark_list = []
             if processed.multi_hand_landmarks:
@@ -169,6 +290,12 @@ def _tracking_loop(headless):
                 draw.draw_landmarks(frame, processed.multi_hand_landmarks[0], mpHands.HAND_CONNECTIONS)
 
             detect_gesture(frame, landmark_list, processed)
+
+            global latest_frame
+            small_frame = cv2.resize(frame, (320, 240))
+            ret_enc, buffer = cv2.imencode('.jpg', small_frame)
+            if ret_enc:
+                latest_frame = buffer.tobytes()
 
             if not headless:
                 cv2.imshow('WGI Engine', frame)
@@ -182,11 +309,57 @@ class WGIServer(BaseHTTPRequestHandler):
     def do_POST(self):
         message = "Ação não reconhecida."
         if self.path == '/start_tracking': 
-            start_tracking(headless=True)
-            message = "Câmera ativa e rastreando!"
+            started = start_tracking(headless=True)
+            message = "Camera active and tracking!" if started else "Could not start camera."
         elif self.path == '/stop_tracking': 
             stop_tracking()
-            message = "Câmera parada com sucesso."
+            message = "Successfully stopped camera."
+        elif self.path == '/config':
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                new_config = json.loads(post_data.decode('utf-8'))
+                calibration_manager.config.update(new_config)
+                calibration_manager.config = calibration_manager.sanitize_config(calibration_manager.config)
+                calibration_manager.save_config(calibration_manager.config)
+                message = "Configuração atualizada com sucesso!"
+        elif self.path == '/start_calibration':
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                data = json.loads(post_data.decode('utf-8'))
+                global calibration_gesture, calibration_idx_history, calibration_mid_history, calibration_thumb_history
+                gesture = data.get("gesture")
+                if not is_tracking:
+                    cancel_calibration()
+                    current_state["action"] = "calibration_failed"
+                    current_state["calibration"] = {"status": "failed", "gesture": gesture}
+                    message = "Start camera before calibration."
+                elif gesture not in calibration_manager.DEFAULT_CONFIG:
+                    cancel_calibration()
+                    current_state["action"] = "calibration_failed"
+                    current_state["calibration"] = {"status": "failed", "gesture": gesture}
+                    message = "Calibration gesture not recognized."
+                else:
+                    reset_interaction_state()
+                    calibration_gesture = gesture
+                    calibration_idx_history = []
+                    calibration_mid_history = []
+                    calibration_thumb_history = []
+                    current_state["calibration"] = {"status": "recording", "gesture": calibration_gesture}
+                    message = f"Calibrating {calibration_gesture}..."
+        elif self.path == '/set_wizard_mode':
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                data = json.loads(post_data.decode('utf-8'))
+                global wizard_active
+                requested_active = data.get("active", False)
+                if not requested_active:
+                    cancel_calibration()
+                reset_interaction_state()
+                wizard_active = requested_active
+                message = f"Wizard mode set to {wizard_active}"
         self.send_response(200); self.send_header('Access-Control-Allow-Origin', '*'); self.end_headers()
         self.wfile.write(json.dumps({"message": message}).encode())
 
@@ -197,6 +370,26 @@ class WGIServer(BaseHTTPRequestHandler):
             state_data["is_tracking"] = is_tracking
             self.wfile.write(json.dumps(state_data).encode())
             if current_state["action"] not in ["move", "drag", "holding_click"]: current_state["action"] = "move"
+        elif self.path == '/config':
+            self.send_response(200); self.send_header('Content-Type', 'application/json'); self.send_header('Access-Control-Allow-Origin', '*'); self.end_headers()
+            self.wfile.write(json.dumps(calibration_manager.config).encode())
+        elif self.path.startswith('/video_feed'):
+            self.send_response(200)
+            self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=frame')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            try:
+                while is_tracking:
+                    if latest_frame is not None:
+                        self.wfile.write(b'--frame\r\n')
+                        self.send_header('Content-Type', 'image/jpeg')
+                        self.send_header('Content-Length', str(len(latest_frame)))
+                        self.end_headers()
+                        self.wfile.write(latest_frame)
+                        self.wfile.write(b'\r\n')
+                    time.sleep(0.06)
+            except Exception:
+                pass
         elif self.path == '/':
             self.send_response(200); self.send_header('Content-Type', 'text/plain'); self.send_header('Access-Control-Allow-Origin', '*'); self.end_headers()
             self.wfile.write(b"WGI Server is running! Available endpoints: GET /state, POST /start_tracking, POST /stop_tracking")
@@ -206,12 +399,20 @@ class WGIServer(BaseHTTPRequestHandler):
 def start_tracking(headless):
     global is_tracking
     if not is_tracking:
+        cancel_calibration()
+        reset_interaction_state()
         camera_ready_event.clear()
         is_tracking = True
         threading.Thread(target=_tracking_loop, args=(headless,), daemon=True).start()
         camera_ready_event.wait(timeout=10.0)
+    return is_tracking
 
-def stop_tracking(): global is_tracking; is_tracking = False
+def stop_tracking():
+    global is_tracking
+    cancel_calibration()
+    reset_interaction_state()
+    is_tracking = False
+    current_state["action"] = "move"
 
 def find_free_port(start_port=8765, max_port=8800):
     for port in range(start_port, max_port):

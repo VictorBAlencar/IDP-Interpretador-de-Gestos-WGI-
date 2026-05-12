@@ -10,6 +10,12 @@ HISTORY_LENGTH = 3
 idx_history = collections.deque(maxlen=HISTORY_LENGTH)
 mid_history = collections.deque(maxlen=HISTORY_LENGTH)
 
+def reset_state():
+    global is_double_holding
+    idx_history.clear()
+    mid_history.clear()
+    is_double_holding = False
+
 def is_double_click(landmark_list, thumb_index_dist):
     global is_double_holding
     
@@ -41,7 +47,10 @@ def is_double_click(landmark_list, thumb_index_dist):
         if idx_angle > RELEASE_ANGLE or mid_angle > RELEASE_ANGLE:
             is_double_holding = False
     else:
-        if is_stable and idx_angle < TRIGGER_ANGLE and mid_angle < TRIGGER_ANGLE and (thumb_index_dist > THUMB_DIST or is_frozen):
+        if (is_stable and 
+            idx_angle < TRIGGER_ANGLE and 
+            mid_angle < TRIGGER_ANGLE and 
+            (thumb_index_dist > THUMB_DIST or is_frozen)):
             is_double_holding = True
             
     return is_double_holding

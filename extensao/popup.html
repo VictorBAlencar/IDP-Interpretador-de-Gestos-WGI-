@@ -1,71 +1,228 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <style>
+        :root {
+            --bg: linear-gradient(180deg, #2a2a2a 0%, #111111 50%, #000000 100%);
+            --glass-bg: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text: #ffffff;
+            --text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            --text-muted: #d0d0d0;
+            --btn-bg: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 49%, rgba(255,255,255,0.0) 50%, rgba(255,255,255,0.2) 100%);
+            --btn-hover: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.3) 49%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.4) 100%);
+            --accent: linear-gradient(180deg, #777777 0%, #444444 49%, #222222 50%, #333333 100%);
+            --accent-hover: linear-gradient(180deg, #888888 0%, #555555 49%, #333333 50%, #444444 100%);
+            --success-bg: linear-gradient(180deg, #555555 0%, #333333 49%, #111111 50%, #222222 100%);
+            --success-txt: #ffffff;
+        }
+        [data-theme="light"] {
+            --bg: linear-gradient(180deg, #f5f5f5 0%, #e0e0e0 50%, #cccccc 100%);
+            --glass-bg: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%);
+            --glass-border: rgba(255, 255, 255, 0.9);
+            --text: #111111;
+            --text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+            --text-muted: #555555;
+            --btn-bg: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 49%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.6) 100%);
+            --btn-hover: linear-gradient(180deg, rgba(255,255,255,1.0) 0%, rgba(255,255,255,0.8) 49%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.8) 100%);
+            --accent: linear-gradient(180deg, #aaaaaa 0%, #777777 49%, #555555 50%, #666666 100%);
+            --accent-hover: linear-gradient(180deg, #bbbbbb 0%, #888888 49%, #666666 50%, #777777 100%);
+            --success-bg: linear-gradient(180deg, #999999 0%, #666666 49%, #444444 50%, #555555 100%);
+            --success-txt: #ffffff;
+        }
         body {
-            width: 220px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-            background-color: #ffffff;
-            color: #000000;
+            width: 320px;
+            height: 520px;
             margin: 0;
-        }
-        h3 {
-            margin-top: 0;
-            font-weight: 600;
-            letter-spacing: -0.5px;
-        }
-        button {
-            padding: 10px;
-            width: 100%;
-            margin-top: 10px;
-            cursor: pointer;
-            background-color: #ffffff;
-            color: #000000;
-            border: 1px solid #000000;
-            border-radius: 4px;
-            font-weight: 500;
-            font-size: 13px;
-            transition: all 0.2s ease;
-        }
-        button:hover {
-            background-color: #000000;
-            color: #ffffff;
-        }
-        #loading-container {
-            display: none;
-            margin-top: 15px;
-            width: 100%;
-            height: 4px;
-            background-color: #f3f3f3;
-            border-radius: 2px;
+            padding: 15px;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            transition: background 0.4s ease;
             overflow: hidden;
-            position: relative;
         }
-        #loading-container::after {
-            content: '';
+        .aero-panel {
+            flex: 1;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: inset 0 2px 2px rgba(255,255,255,0.5), 0 8px 16px rgba(0,0,0,0.3);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             position: absolute;
-            left: -50%;
-            width: 50%;
-            height: 100%;
-            background-color: #000000;
-            animation: indeterminate 1.5s infinite linear;
+            top: 15px; left: 15px; right: 15px; bottom: 15px;
         }
-        @keyframes indeterminate {
-            0% { left: -50%; }
-            100% { left: 100%; }
+        .aero-panel.hidden {
+            transform: scale(0.95) translateY(20px);
+            opacity: 0;
+            pointer-events: none;
         }
-        #status { margin-top: 15px; font-size: 12px; color: #666666; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+        }
+        h3 { margin: 0; font-size: 18px; font-weight: 600; text-shadow: var(--text-shadow); }
+        .theme-toggle { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text); padding: 0; }
+        button.glass-btn {
+            background: var(--btn-bg); color: var(--text); border: 1px solid var(--glass-border);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.2);
+            text-shadow: var(--text-shadow); padding: 12px; border-radius: 20px; font-size: 14px; 
+            font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; width: 100%;
+        }
+        button.glass-btn:hover { background: var(--btn-hover); }
+        button.glass-btn.primary { background: var(--accent); color: #fff; border: 1px solid rgba(255,255,255,0.4); box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 3px 6px rgba(0,0,0,0.3); }
+        button.glass-btn.primary:hover { background: var(--accent-hover); }
+        button.glass-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(80%);
+            pointer-events: none;
+        }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); font-size: 12px; margin-bottom: 15px; align-self: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);}
+        
+        /* Wizard Styles */
+        .wizard-step { display: none; flex: 1; flex-direction: column; justify-content: center; text-align: center; }
+        .wizard-step.active { display: flex; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from{opacity:0; transform:translateX(10px)} to{opacity:1; transform:translateX(0)} }
+        input[type="range"] { width: 100%; margin: 15px 0; accent-color: var(--accent); }
+        .live-feedback {
+            margin-top: auto; padding: 10px; border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            color: var(--text); font-size: 13px; text-align: center; transition: 0.2s; text-shadow: var(--text-shadow);
+        }
+        .live-feedback.success { background: var(--success-bg); border: 1px solid rgba(255,255,255,0.6); color: var(--success-txt); transform: scale(1.05); box-shadow: inset 0 1px 2px rgba(255,255,255,0.5), 0 4px 8px rgba(0,0,0,0.2); }
+        .live-feedback.warning { border-color: #f7c948; color: #fff0a8; }
+        .live-feedback.error { border-color: #ff8585; color: #ffc5c5; }
+        .pose-card {
+            text-align: left;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 10px;
+            background: rgba(0,0,0,0.18);
+            font-size: 12px;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+        .pose-card strong { display: block; margin-bottom: 4px; font-size: 13px; }
+        .pose-card ul { margin: 6px 0 0 17px; padding: 0; }
+        .saved-values {
+            display: none;
+            margin-top: 8px;
+            font-family: Consolas, monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            word-break: break-word;
+            text-align: left;
+        }
+        .saved-values.visible { display: block; }
+        .progress-line {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin: -4px 0 8px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h3>WGI Mouse</h3>
-    <button id="btn-start">Iniciar Câmera</button>
-    <button id="btn-stop">Parar Câmera</button>
-    <div id="loading-container"></div>
-    <div id="status">Pronto para iniciar.</div>
+    <div id="main-panel" class="aero-panel active">
+        <div class="header">
+            <h3>WGI</h3>
+            <button id="theme-btn" class="theme-toggle">🌓</button>
+        </div>
+        <div class="status-badge" id="status">Status: Waiting</div>
+        <button id="btn-start" class="glass-btn primary">Start Camera</button>
+        <button id="btn-stop" class="glass-btn">Stop Camera</button>
+        <div style="flex:1"></div>
+        <button id="btn-calibrate" class="glass-btn">Callibration System</button>
+    </div>
+
+    
+    <div id="wizard-panel" class="aero-panel hidden">
+        <div class="header">
+            <h3>Calibration</h3>
+        </div>
+        
+        <div id="video-container" style="text-align:center; margin-bottom: 10px;">
+            <img id="video-feed" alt="Camera Feed" style="width: 100%; max-height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;">
+        </div>
+        
+        <div class="wizard-step active">
+            <p>Calibration saves directly to <strong>calibration.json</strong>.</p>
+            <p style="font-size: 13px; color: var(--text-muted);">Start the camera first. Each step records about 1.5 seconds and then confirms whether the JSON was updated.</p>
+            <div style="flex:1"></div>
+            <button class="glass-btn primary btn-next">Start Setup</button>
+        </div>
+
+        <div class="wizard-step">
+            <div class="progress-line">Step 1 of 3</div>
+            <h4 style="margin:0 0 10px 0;">Left Click</h4>
+            <div class="pose-card">
+                <strong>Pose to hold</strong>
+                Bend the index finger. Keep the middle finger mostly open.
+                <ul>
+                    <li>Thumb-overlap freeze is allowed for precise clicks.</li>
+                    <li>Hold still until the button unlocks.</li>
+                </ul>
+            </div>
+            <button class="glass-btn btn-calibrate-action" data-gesture="left_click">Calibrate Left Click</button>
+            <div class="live-feedback" data-target="left_click">Ready. Press calibrate, then hold the pose.</div>
+            <div class="saved-values" data-values-for="left_click"></div>
+            <div style="flex:1"></div>
+            <button class="glass-btn primary btn-next">Next: Right Click</button>
+        </div>
+
+        <div class="wizard-step">
+            <div class="progress-line">Step 2 of 3</div>
+            <h4 style="margin:0 0 10px 0;">Right Click</h4>
+            <div class="pose-card">
+                <strong>Pose to hold</strong>
+                Keep the index finger open. Bend the middle finger.
+                <ul>
+                    <li>Thumb-overlap freeze is allowed for precise clicks.</li>
+                    <li>Hold the same pose for the full capture.</li>
+                </ul>
+            </div>
+            <button class="glass-btn btn-calibrate-action" data-gesture="right_click">Calibrate Right Click</button>
+            <div class="live-feedback" data-target="right_click">Ready. Press calibrate, then hold the pose.</div>
+            <div class="saved-values" data-values-for="right_click"></div>
+            <div style="flex:1"></div>
+            <button class="glass-btn primary btn-next">Next: Double Click</button>
+        </div>
+
+        <div class="wizard-step">
+            <div class="progress-line">Step 3 of 3</div>
+            <h4 style="margin:0 0 10px 0;">Double Click</h4>
+            <div class="pose-card">
+                <strong>Pose to hold</strong>
+                Bend both index and middle fingers at the same time.
+                <ul>
+                    <li>Do not close the whole hand.</li>
+                    <li>Release after the saved message appears.</li>
+                </ul>
+            </div>
+            <button class="glass-btn btn-calibrate-action" data-gesture="double_click">Calibrate Double Click</button>
+            <div class="live-feedback" data-target="double_click">Ready. Press calibrate, then hold the pose.</div>
+            <div class="saved-values" data-values-for="double_click"></div>
+            <div style="flex:1"></div>
+            <button class="glass-btn primary btn-next">Finish Setup</button>
+        </div>
+
+        <div class="wizard-step">
+            <h4 style="margin:0 0 10px 0;">Calibration Complete</h4>
+            <p style="font-size: 13px; color: var(--text-muted);">Left click, right click, and double click were calibrated and saved.</p>
+            <div class="live-feedback success">OK - all gestures calibrated.</div>
+            <div style="flex:1"></div>
+            <button class="glass-btn primary btn-next">Done</button>
+        </div>
+    </div>
+
     <script src="popup.js"></script>
 </body>
 </html>

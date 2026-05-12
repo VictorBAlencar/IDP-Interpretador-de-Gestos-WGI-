@@ -8,6 +8,10 @@ HISTORY_LENGTH = 3
 idx_history = collections.deque(maxlen=HISTORY_LENGTH)
 mid_history = collections.deque(maxlen=HISTORY_LENGTH)
 
+def reset_state():
+    idx_history.clear()
+    mid_history.clear()
+
 def is_right_click(landmark_list, thumb_index_dist):
     idx_angle_raw = util.get_angle(landmark_list[5], landmark_list[6], landmark_list[8])
     mid_angle_raw = util.get_angle(landmark_list[9], landmark_list[10], landmark_list[12])
