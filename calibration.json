@@ -1,0 +1,28 @@
+{
+    "right_click": {
+        "mid_angle_max": 50.0,
+        "idx_angle_min": 90.0,
+        "thumb_index_dist_min": 50.0,
+        "stability_std_max": 25.0
+    },
+    "left_click": {
+        "idx_angle_max": 50.0,
+        "mid_angle_min": 90.0,
+        "idx_drag_angle_max": 110.0,
+        "mid_drag_angle_min": 40.0,
+        "thumb_index_dist_min": 50.0,
+        "stability_std_max": 25.0
+    },
+    "double_click": {
+        "trigger_angle_max": 50.0,
+        "release_angle_min": 90.0,
+        "thumb_index_dist_min": 50.0,
+        "stability_std_max": 25.0
+    },
+    "scroll": {
+        "idx_angle_min": 90.0,
+        "mid_angle_min": 90.0,
+        "ring_angle_max": 50.0,
+        "pinky_angle_max": 50.0
+    }
+}
