@@ -1,117 +1,805 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IGW | Inovação em Gestos</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="./css/arquiteto.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IGW — Your Gesture, Redefined</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --off-white: #F0EDE8;
+      --graphite: #2C2C2C;
+      --graphite-mid: #3E3E3E;
+      --graphite-light: #5A5A5A;
+      --accent: #B5B0AA;
+      --border: rgba(240,237,232,0.12);
+      --card-bg: rgba(240,237,232,0.04);
+      --shadow: rgba(0,0,0,0.5);
+    }
+    [data-theme="dark"] {
+      --bg: #0A0A0A;
+      --bg2: #111111;
+      --text: #F0EDE8;
+      --text-muted: #888;
+      --nav-bg: rgba(10,10,10,0.85);
+      --card: #161616;
+      --card-border: rgba(240,237,232,0.08);
+      --btn-primary: #F0EDE8;
+      --btn-primary-text: #0A0A0A;
+      --tag-bg: rgba(240,237,232,0.07);
+      --toggle-bg: #222;
+    }
+    [data-theme="light"] {
+      --bg: #F0EDE8;
+      --bg2: #E8E4DE;
+      --text: #1A1A1A;
+      --text-muted: #666;
+      --nav-bg: rgba(240,237,232,0.9);
+      --card: #FAFAF8;
+      --card-border: rgba(44,44,44,0.12);
+      --btn-primary: #2C2C2C;
+      --btn-primary-text: #F0EDE8;
+      --tag-bg: rgba(44,44,44,0.07);
+      --toggle-bg: #ddd;
+    }
+ 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+    html { scroll-behavior: smooth; }
+ 
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+ 
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: var(--nav-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 0 40px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.4s;
+    }
+ 
+    .nav-logo img {
+      height: 80px;
+      object-fit: contain;
+      filter: brightness(1);
+      transition: opacity 0.2s;
+    }
+    [data-theme="light"] .nav-logo img {
+      filter: brightness(0);
+    }
+ 
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      padding: 7px 14px;
+      border-radius: 40px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--text);
+      background: var(--tag-bg);
+    }
+ 
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+ 
+    /* Theme Toggle */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      background: var(--toggle-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 40px;
+      padding: 5px 12px 5px 8px;
+      transition: background 0.3s;
+      user-select: none;
+    }
+    .theme-toggle .icon { font-size: 14px; line-height: 1; }
+    .theme-toggle span {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+    }
+    .theme-track {
+      width: 28px; height: 16px;
+      background: var(--card-border);
+      border-radius: 40px;
+      position: relative;
+      transition: background 0.3s;
+    }
+    .theme-thumb {
+      width: 12px; height: 12px;
+      background: var(--text);
+      border-radius: 50%;
+      position: absolute;
+      top: 2px; left: 2px;
+      transition: transform 0.3s, background 0.3s;
+    }
+    [data-theme="light"] .theme-thumb { transform: translateX(12px); }
+ 
+    /* ── SECTIONS ── */
+    section {
+      min-height: 100vh;
+      padding: 100px 0 80px;
+      position: relative;
+    }
+ 
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+ 
+    /* ── HOME ── */
+    #home {
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+    .home-inner {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 60px;
+      align-items: center;
+      width: 100%;
+    }
+    .home-text { }
+    .home-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: var(--tag-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 40px;
+      padding: 5px 14px;
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.1s forwards;
+    }
+    .home-tag::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: #8aff8a;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #8aff8a;
+    }
+    .home-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(48px, 6vw, 82px);
+      font-weight: 800;
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      opacity: 0;
+      animation: fadeUp 0.8s 0.2s forwards;
+    }
+    .home-title span {
+      color: var(--accent);
+    }
+    .home-subtitle {
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--text-muted);
+      margin-top: 20px;
+      max-width: 420px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.35s forwards;
+    }
+    .home-cta {
+      display: flex;
+      gap: 12px;
+      margin-top: 40px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.5s forwards;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 26px;
+      border-radius: 40px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary {
+      background: var(--btn-primary);
+      color: var(--btn-primary-text);
+    }
+    .btn-primary:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+    .btn-outline:hover { background: var(--tag-bg); }
+ 
+    .home-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      animation: fadeIn 1s 0.4s forwards;
+    }
+    .hero-img-wrap {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-glow {
+      position: absolute;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(176,166,154,0.2) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: pulse 3s ease-in-out infinite;
+    }
+    .hero-img-wrap img {
+      width: 100%;
+      max-width: 380px;
+      object-fit: contain;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+      animation: float 4s ease-in-out infinite;
+    }
+    [data-theme="light"] .hero-img-wrap img {
+      filter: drop-shadow(0 20px 40px rgba(44,44,44,0.2));
+    }
+ 
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-12px); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+ 
+    /* ── SECTION HEADER ── */
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .section-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 540px;
+    }
+    .divider {
+      width: 40px;
+      height: 2px;
+      background: var(--accent);
+      margin: 20px 0 40px;
+      border-radius: 2px;
+    }
+ 
+    /* ── APRESENTAÇÃO ── */
+    #apresentacao {
+      background: var(--bg2);
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 50px;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover {
+      border-color: rgba(176,166,154,0.15);
+    }
+    .feature-card:hover::before { opacity: 0; }
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .feature-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    .feature-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+ 
+    /* ── DOWNLOAD ── */
+    #download { }
+    .download-area {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: start;
+      margin-top: 50px;
+    }
+    .download-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .dl-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px 22px;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .dl-btn::after {
+      content: '↓';
+      position: absolute;
+      right: 22px;
+      font-size: 18px;
+      color: var(--text-muted);
+      transition: transform 0.2s, color 0.2s;
+    }
+    .dl-btn:hover {
+      border-color: rgba(176,166,154,0.15);
+    }
+    .dl-btn:hover::after {
+      color: var(--text-muted);
+    }
+    .dl-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      width: 44px;
+      text-align: center;
+      flex-shrink: 0;
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 6px 4px;
+    }
+    .dl-info { }
+    .dl-os {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+    .dl-ver {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+ 
+    .download-tips {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .tip-card {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 22px 20px;
+    }
+    .tip-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--card-border);
+      line-height: 1;
+      flex-shrink: 0;
+      width: 36px;
+    }
+    .tip-content {}
+    .tip-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .tip-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+ 
+    /* ── EQUIPE ── */
+    #equipe {
+      background: var(--bg2);
+    }
+    .team-slider-wrap {
+      position: relative;
+      margin-top: 50px;
+      overflow: hidden;
+    }
+    .team-track {
+      display: flex;
+      gap: 20px;
+      transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .team-card {
+      flex: 0 0 calc(25% - 15px);
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 32px 24px;
+      text-align: center;
+      transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .team-card:hover {
+      border-color: rgba(176,166,154,0.25);
+      box-shadow: 0 16px 36px var(--shadow);
+      transform: translateY(-4px);
+    }
+    .team-avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: var(--tag-bg);
+      border: 2px solid var(--card-border);
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .team-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .team-role {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .role-badge {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+    .role-backend { background: rgba(100,160,255,0.1); color: #88b4ff; }
+    .role-frontend { background: rgba(100,220,160,0.1); color: #78d6a8; }
+    .role-pm { background: rgba(255,190,100,0.1); color: #ffc87a; }
+ 
+    [data-theme="light"] .role-backend { background: rgba(40,100,220,0.08); color: #3b6ed4; }
+    [data-theme="light"] .role-frontend { background: rgba(30,140,90,0.08); color: #2a8a60; }
+    [data-theme="light"] .role-pm { background: rgba(180,100,20,0.08); color: #b46010; }
+ 
+    .slider-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-top: 36px;
+    }
+    .slider-btn {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    }
+    .slider-btn:hover {
+      background: var(--tag-bg);
+      border-color: var(--accent);
+      transform: scale(1.08);
+    }
+    .slider-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--card-border);
+      cursor: pointer;
+      transition: background 0.2s, width 0.2s;
+    }
+    .dot.active {
+      background: var(--text);
+      width: 20px;
+      border-radius: 4px;
+    }
+ 
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg);
+      border-top: 1px solid var(--card-border);
+      padding: 40px;
+      text-align: center;
+    }
+    .footer-logo {
+      height: 28px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      filter: brightness(1);
+    }
+    [data-theme="light"] .footer-logo { filter: brightness(0); }
+    footer p {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+ 
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-6 { transition-delay: 0.6s; }
+ 
+    /* ── ACTIVE NAV INDICATOR ── */
+    .nav-links a {
+      position: relative;
+    }
+ 
+    /* Noise overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.025;
+      pointer-events: none;
+      z-index: 9999;
+    }
+ 
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .home-inner { grid-template-columns: 1fr; }
+      .home-visual { display: none; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .download-area { grid-template-columns: 1fr; }
+      .team-card { flex: 0 0 calc(50% - 10px); }
+      .container { padding: 0 20px; }
+    }
+  </style>
 </head>
 <body>
-    <header class="site-header fixed inset-x-0 top-0 z-50">
-        <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-            <a href="#home" class="flex items-center gap-3">
-                <img src="./assets/wgi-logo.png" alt="WGI logo" class="w-24 h-24" />
-                <div>
-                    <p class="text-white font-bold leading-none">IGW</p>
-                    <p class="text-xs text-white uppercase tracking-[0.35em]">Cursor Puppetry</p>
-                </div>
-            </a>
-            <nav class="hidden md:flex items-center gap-6 text-sm text-gray-300">
-                <a href="#home" class="hover:text-white transition">Home</a>
-                <a href="#download" class="hover:text-white transition">Como funciona</a>
-                <a href="#gestures" class="hover:text-white transition">Gestos</a>
-                <a href="#test" class="hover:text-white transition">Teste</a>
-                <a href="#team" class="hover:text-white transition">Equipe</a>
-            </nav>
+ 
+<!-- NAV -->
+<nav id="navbar">
+  <a class="nav-logo" href="#home">
+    <img src="assets/WGI.png" alt="IGW Logo" id="nav-logo-img"/>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#home" class="active">Home</a></li>
+    <li><a href="#apresentacao">Apresentação</a></li>
+    <li><a href="#download">Download</a></li>
+    <li><a href="#equipe">Equipe</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+      <span class="icon" id="theme-icon"></span>
+      <div class="theme-track"><div class="theme-thumb"></div></div>
+      <span id="theme-label">Escuro</span>
+    </div>
+  </div>
+</nav>
+ 
+<!-- HOME -->
+<section id="home">
+  <div class="container">
+    <div class="home-inner">
+      <div class="home-text">
+        <h1 class="home-title">Your Gesture,<br/><span>Redefined.</span></h1>
+        <p class="home-subtitle">IGW transforma a maneira como você interage com seu computador. Controle tudo com gestos naturais — sem tocar no teclado.</p>
+        <div class="home-cta">
+          <a href="#download" class="btn btn-primary">Baixar agora</a>
+          <a href="#apresentacao" class="btn btn-outline">Saiba mais</a>
         </div>
-    </header>
+      </div>
 
-    <!-- Hero Section -->
-    <section id="home" class="min-h-screen flex flex-col items-center justify-center px-6 text-center relative overflow-hidden">
-        <!-- Floating Elements Background -->
-        <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-600/10 rounded-full blur-[120px]"></div>
-        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-[150px]"></div>
-
-        <div class="reveal active">
-            <div class="flex items-center justify-center gap-8 mb-8">
-                <div class="flex items-center gap-4">
-                    <div class="relative tech-hand">
-                        <i class="fa-solid fa-hand-pointer text-6xl text-cyan-400 animate-pulse"></i>
-                        <div class="absolute inset-0 bg-cyan-400/20 rounded-full blur-xl animate-ping"></div>
-                    </div>
-                    <div class="text-left">
-                        <h1 class="text-6xl md:text-7xl font-extrabold tracking-tighter glow-text">IGW</h1>
-                        <p class="text-blue-400 font-medium tracking-[0.3em] uppercase">Manipula Cursor Puppetry</p>
-                    </div>
-                </div>
-            </div>
-            <p class="max-w-2xl text-gray-400 text-lg leading-relaxed mx-auto">
-                O IGW é uma interface de gestos que transforma sua mão em controle de navegação sem precisar de extensão.
-            </p>
-            <div class="mt-10 flex gap-4 justify-center">
-                <a href="#gestures" class="px-8 py-3 border border-white/20 rounded-full hover:bg-white/10 transition">Ver Gestos</a>
-                <a href="#download" class="px-8 py-3 btn-download rounded-full font-bold">Testar Agora</a>
-            </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- APRESENTAÇÃO -->
+<section id="apresentacao">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-label">O que é o IGW</p>
+      <h2 class="section-title">Gestos como<br/>linguagem universal</h2>
+    </div>
+    <div class="feature-grid">
+    
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-name">Totalmente Personalizável</div>
+        <p class="feature-text">Mapeie qualquer gesto para qualquer ação do sistema.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-name">Multiplataforma</div>
+        <p class="feature-text">Disponível para Windows, macOS e Linux.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-4">
+        <div class="feature-name">100% Local</div>
+        <p class="feature-text">Nenhum dado é enviado para servidores externos. Sua privacidade é prioridade.</p>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- DOWNLOAD -->
+<section id="download">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-label">Instalação</p>
+      <h2 class="section-title">Baixe para<br/>sua plataforma</h2>
+      <div class="divider"></div>
+      <p class="section-desc">Escolha a plataforma para instalar o IGW.</p>
+    </div>
+    <div class="download-area">
+      <div class="download-buttons reveal reveal-delay-1">
+        <a href="#" class="dl-btn">
+          <div class="dl-logo">Win</div>
+          <div class="dl-info">
+            <div class="dl-os">Windows</div>
+            <div class="dl-ver">v1.0.0 — .exe installer · 64-bit</div>
+          </div>
+        </a>
+        <a href="#" class="dl-btn">
+          <div class="dl-logo">Mac</div>
+          <div class="dl-info">
+            <div class="dl-os">macOS</div>
+            <div class="dl-ver">v1.0.0 — .dmg · Apple Silicon & Intel</div>
+          </div>
+        </a>
+        <a href="#" class="dl-btn">
+          <div class="dl-logo">Lnx</div>
+          <div class="dl-info">
+            <div class="dl-os">Linux</div>
+            <div class="dl-ver">v1.0.0 — .tar.gz · x86_64</div>
+          </div>
+        </a>
+      </div>
+      <div class="download-tips reveal reveal-delay-2">
+        <div class="tip-card">
+          <div class="tip-num">01</div>
+          <div class="tip-content">
+            <div class="tip-title">Abra o arquivo baixado</div>
+            <p class="tip-text">localize o arquivo baixado para abrir o instalador do IGW.</p>
+          </div>
         </div>
-    </section>
-
-    <!-- Video & Download Section -->
-    <section id="download" class="py-24 px-6 bg-[#080808]">
-        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-            <div class="reveal">
-                <h2 class="text-4xl font-bold mb-6">Como funciona?</h2>
-                <p class="text-gray-400 mb-8">Assista ao tutorial e descubra como o IGW mapeia sua mão para controlar cliques, rolagem e navegação. Agora sem precisar instalar nenhuma extensão.</p>
-                <div class="p-6 bg-white/5 rounded-3xl border border-white/10">
-                    <ul class="space-y-4">
-                        <li class="flex items-center gap-3"><i class="fa-solid fa-check text-cyan-400"></i> Zero latência de captura</li>
-                        <li class="flex items-center gap-3"><i class="fa-solid fa-check text-cyan-400"></i> Funciona no navegador sem extensão</li>
-                        <li class="flex items-center gap-3"><i class="fa-solid fa-check text-cyan-400"></i> Privacidade total: processamento local</li>
-                    </ul>
-                </div>
-                
-                <h2 class="text-2xl font-bold mb-4">Próximos Passos</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div class="p-6 bg-white/5 rounded-3xl border border-white/10">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
-                                1
-                            </div>
-                            <h3 class="text-lg font-semibold">Extrair arquivo</h3>
-                        </div>
-                        <p class="text-gray-400">Extraia o conteúdo do download em uma pasta fácil de acessar.</p>
-                    </div>
-                    <div class="p-6 bg-white/5 rounded-3xl border border-white/10">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
-                                2
-                            </div>
-                            <h3 class="text-lg font-semibold">Iniciar servidor</h3>
-                        </div>
-                        <p class="text-gray-400">Abra o arquivo <code>wgc.exe</code> para iniciar o servidor de suporte da extensão.</p>
-                    </div>
-                </div>
-                <a href="https://pixeldrain.com/u/jcw2AZAF" target="_blank" class="mt-10 w-full md:w-auto px-10 py-4 btn-download rounded-xl font-bold flex items-center justify-center gap-3 inline-flex">
-                    <i class="fa-solid fa-download"></i> Download
-                </a>
-            </div>
-            <div class="reveal">
-                <div class="aspect-video bg-black rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
-                    <iframe class="w-full h-full" src="https://www.youtube.com/embed/1l5g_vGeUhA" title="Tutorial IGW" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                </div>
-            </div>
+        <div class="tip-card">
+          <div class="tip-num">02</div>
+          <div class="tip-content">
+            <div class="tip-title">Extraia e instale</div>
+            <p class="tip-text">Extraia o conteúdo do arquivo para uma pasta de sua preferência e depois execute o instalador</p>
+          </div>
         </div>
-    </section>
-
-    <!-- Dicas de Gestos -->
-    <section id="gestures" class="py-24 px-6">
-        <div class="max-w-7xl mx-auto text-center mb-16 reveal">
-            <h2 class="text-5xl font-bold mb-4">Dicas de Gestos</h2>
-            <p class="text-blue-400 text-lg">Aprenda os gestos principais para navegar com as mãos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- EQUIPE -->
+<section id="equipe">
+  <div class="container">
+    <div class="reveal">
+      <h2 class="section-title">Nossa equipe</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="team-slider-wrap reveal">
+      <div class="team-track" id="teamTrack">
+        <div class="team-card">
+          <div class="team-avatar">D</div>
+          <div class="team-name">Daniel</div>
+          <div class="team-role">Backend Developer</div>
+          <span class="role-badge role-backend">Backend</span>
         </div>
 
         <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -249,30 +937,84 @@
             </div>
         </div>
     </section>
-
-    <footer class="py-12 border-t border-white/5 text-center text-gray-600 text-sm">
-        <p>&copy; 2026 IGW Project - Inovação sem barreiras físicas.</p>
-    </footer>
-
-    <script>
-        // Função para revelar elementos ao rolar (Estilo Antigravity)
-        function reveal() {
-            var reveals = document.querySelectorAll(".reveal");
-            for (var i = 0; i < reveals.length; i++) {
-                var windowHeight = window.innerHeight;
-                var elementTop = reveals[i].getBoundingClientRect().top;
-                var elementVisible = 150;
-                if (elementTop < windowHeight - elementVisible) {
-                    reveals[i].classList.add("active");
-                }
-            }
-        }
-
-        window.addEventListener("scroll", reveal);
-
-        // Executar reveal inicial
-        reveal();
-    </script>
-    <script src="./js/arquiteto.js"></script>
+ 
+<!-- FOOTER -->
+<footer>
+  <img class="footer-logo" src="/mnt/user-data/uploads/WGI.png" alt="IGW"/>
+  <p>© 2025 IGW — Your Gesture, Redefined. Todos os direitos reservados.</p>
+</footer>
+ 
+<script>
+  // ── THEME ──
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.getElementById('theme-icon').textContent = isDark ? '' : '';
+    document.getElementById('theme-label').textContent = isDark ? 'Claro' : 'Escuro';
+  }
+ 
+  // ── ACTIVE NAV ──
+  const sections = document.querySelectorAll('section');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 100) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  });
+ 
+  // ── SCROLL REVEAL ──
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  reveals.forEach(r => observer.observe(r));
+ 
+  // ── TEAM SLIDER ──
+  let teamIndex = 0;
+  const track = document.getElementById('teamTrack');
+  const cards = track.querySelectorAll('.team-card');
+  const totalCards = cards.length;
+  const visibleCards = () => window.innerWidth <= 768 ? 2 : 4;
+  const maxIndex = () => Math.ceil(totalCards / visibleCards()) - 1;
+  const dotsContainer = document.getElementById('sliderDots');
+ 
+  function buildDots() {
+    dotsContainer.innerHTML = '';
+    const count = maxIndex() + 1;
+    for (let i = 0; i < count; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === teamIndex ? ' active' : '');
+      d.onclick = () => goToSlide(i);
+      dotsContainer.appendChild(d);
+    }
+  }
+ 
+  function updateSlider() {
+    const cardWidth = cards[0].offsetWidth + 20;
+    const offset = teamIndex * visibleCards() * cardWidth;
+    track.style.transform = `translateX(-${offset}px)`;
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === teamIndex));
+  }
+ 
+  function slideTeam(dir) {
+    const max = maxIndex();
+    teamIndex = Math.max(0, Math.min(teamIndex + dir, max));
+    updateSlider();
+  }
+ 
+  function goToSlide(i) {
+    teamIndex = i;
+    updateSlider();
+  }
+ 
+  buildDots();
+  window.addEventListener('resize', () => { buildDots(); updateSlider(); });
+</script>
 </body>
 </html>
+ 
