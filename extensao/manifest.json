@@ -32,9 +32,9 @@
     }
   },
   "icons": {
-    "16": "logo.png",
-    "32": "logo.png",
-    "48": "logo.png",
-    "128": "logo.png"
+    "16": "logo.ico",
+    "32": "logo.ico",
+    "48": "logo.ico",
+    "128": "logo.ico"
   }
 }
